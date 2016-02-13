@@ -1,9 +1,3 @@
-# log
-
-That's it, just simple leveled logging with the Go std lib log.
-
-
-```go
 package main
 
 import (
@@ -46,15 +40,3 @@ func main() {
 	log.Info.Println("info yes")
 	log.Error.Fatal("fatal")
 }
-```
-
-```
-$ go run example/main.go
-INFO: main.go:19: default info
-ERRO: main.go:20: default error
-ERRO: main.go:34: error yes
-DEBU: /Volumes/Data/dropbox/development/euler/src/github.com/pkar/log/example/main.go:39: debug yes
-INFO: /Volumes/Data/dropbox/development/euler/src/github.com/pkar/log/example/main.go:40: info yes
-ERRO: /Volumes/Data/dropbox/development/euler/src/github.com/pkar/log/example/main.go:41: fatal
-exit status 1
-```

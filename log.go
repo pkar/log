@@ -1,134 +1,79 @@
 package log
 
 import (
-	"fmt"
-	"io"
-	"log"
+	"io/ioutil"
+	logStd "log"
 	"os"
+	"sync"
 )
 
 const (
-	debugLevel = iota
-	infoLevel
-	warnLevel
-	errLevel
-	fatalLevel
+	DebugLevel = iota
+	InfoLevel
+	ErrorLevel
+	// https://golang.org/src/log/log.go?s=8938:8966#L35
+	Ldate         = logStd.Ldate                // the date in the local time zone: 2009/01/23
+	Ltime         = logStd.Ltime                // the time in the local time zone: 01:23:23
+	Lmicroseconds = logStd.Lmicroseconds        // microsecond resolution: 01:23:23.123123.  assumes Ltime.
+	Llongfile     = logStd.Llongfile            // full file name and line number: /a/b/c/d.go:23
+	Lshortfile    = logStd.Lshortfile           // final file name element and line number: d.go:23. overrides Llongfile
+	LUTC          = logStd.LUTC                 // if Ldate or Ltime is set, use UTC rather than the local time zone
+	LstdFlags     = logStd.Ldate | logStd.Ltime // initial values for the standard logger
 )
 
-var logger *Logger
-
-type Logger struct {
-	level uint
-	err   *log.Logger
-	debug *log.Logger
-	info  *log.Logger
-	warn  *log.Logger
-	fatal *log.Logger
-}
+var (
+	Debug *logStd.Logger
+	Info  *logStd.Logger
+	Error *logStd.Logger
+	mu    *sync.Mutex = &sync.Mutex{}
+	// outputs is initializes the writers to the InfoLevel and sets
+	// the io writers to ioutil.Discard, os.Stdout, os.Stderr
+	initOutputs = func() {
+		Debug.SetOutput(ioutil.Discard)
+		Info.SetOutput(os.Stdout)
+		Error.SetOutput(os.Stderr)
+	}
+)
 
 func init() {
-	log.SetFlags(log.Lshortfile | log.Ldate | log.Ltime)
-	logger = &Logger{
-		level: infoLevel,
-		debug: log.New(os.Stdout, "DEBU ", log.Lshortfile|log.Ldate|log.Ltime),
-		info:  log.New(os.Stdout, "INFO ", log.Lshortfile|log.Ldate|log.Ltime),
-		err:   log.New(os.Stdout, "ERRO ", log.Lshortfile|log.Ldate|log.Ltime),
-		warn:  log.New(os.Stdout, "WARN ", log.Lshortfile|log.Ldate|log.Ltime),
-		fatal: log.New(os.Stdout, "FATA", log.Lshortfile|log.Ldate|log.Ltime),
-	}
+	mu.Lock()
+	defer mu.Unlock()
+
+	Debug = logStd.New(ioutil.Discard, "DEBU: ", Ldate|Ltime|Lshortfile)
+	Info = logStd.New(os.Stdout, "INFO: ", Ldate|Ltime|Lshortfile)
+	Error = logStd.New(os.Stderr, "ERRO: ", Ldate|Ltime|Lshortfile)
 }
 
-func SetLevel(level uint) {
-	logger.level = level
+// SetOutputs uses an anonomous function to initialize the writers for Debug, Info, Error
+func SetOutputs(fn func()) {
+	mu.Lock()
+	defer mu.Unlock()
+	initOutputs = fn
+	initOutputs()
 }
 
-func SetOutput(w io.Writer) {
-	logger = &Logger{
-		level: logger.level,
-		err:   log.New(w, "ERRO ", log.Lshortfile|log.Ldate|log.Ltime),
-		debug: log.New(w, "DEBU ", log.Lshortfile|log.Ldate|log.Ltime),
-		info:  log.New(w, "INFO ", log.Lshortfile|log.Ldate|log.Ltime),
-		warn:  log.New(w, "WARN ", log.Lshortfile|log.Ldate|log.Ltime),
-		fatal: log.New(w, "FATA", log.Lshortfile|log.Ldate|log.Ltime),
-	}
+// SetFlags initializes the flags for Debug, Info, Error
+func SetFlags(flags int) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	Debug.SetFlags(flags)
+	Info.SetFlags(flags)
+	Error.SetFlags(flags)
 }
 
-func Debug(msg ...interface{}) {
-	if logger.level <= debugLevel {
-		logger.debug.Output(2, fmt.Sprint(msg...))
-	}
-}
+// SetLevel initializes writers below the level to io.Discard.
+func SetLevel(level int) {
+	mu.Lock()
+	defer mu.Unlock()
 
-func Debugf(format string, v ...interface{}) {
-	if logger.level <= debugLevel {
-		logger.debug.Output(2, fmt.Sprintf(format, v...))
-	}
-}
+	initOutputs()
 
-func Info(msg ...interface{}) {
-	if logger.level <= infoLevel {
-		logger.info.Output(2, fmt.Sprint(msg...))
+	switch level {
+	case InfoLevel:
+		Debug.SetOutput(ioutil.Discard)
+	case ErrorLevel:
+		Debug.SetOutput(ioutil.Discard)
+		Info.SetOutput(ioutil.Discard)
 	}
-}
-
-func Infof(format string, v ...interface{}) {
-	if logger.level <= infoLevel {
-		logger.info.Output(2, fmt.Sprintf(format, v...))
-	}
-}
-
-func Print(msg ...interface{}) {
-	if logger.level <= infoLevel {
-		logger.info.Output(2, fmt.Sprint(msg...))
-	}
-}
-
-func Printf(format string, v ...interface{}) {
-	if logger.level <= infoLevel {
-		logger.info.Output(2, fmt.Sprintf(format, v...))
-	}
-}
-
-func Println(msg ...interface{}) {
-	if logger.level <= infoLevel {
-		logger.info.Output(2, fmt.Sprintln(msg...))
-	}
-}
-
-func Warn(msg ...interface{}) {
-	if logger.level <= warnLevel {
-		logger.warn.Output(2, fmt.Sprint(msg...))
-	}
-}
-
-func Warnf(format string, v ...interface{}) {
-	if logger.level <= warnLevel {
-		logger.warn.Output(2, fmt.Sprintf(format, v...))
-	}
-}
-
-func Error(msg ...interface{}) {
-	if logger.level <= errLevel {
-		logger.err.Output(2, fmt.Sprint(msg...))
-	}
-}
-
-func Errorf(format string, v ...interface{}) {
-	if logger.level <= errLevel {
-		logger.err.Output(2, fmt.Sprintf(format, v...))
-	}
-}
-
-func Fatal(msg ...interface{}) {
-	if logger.level <= fatalLevel {
-		logger.warn.Output(2, fmt.Sprint(msg...))
-	}
-	os.Exit(1)
-}
-
-func Fatalf(format string, v ...interface{}) {
-	if logger.level <= fatalLevel {
-		logger.warn.Output(2, fmt.Sprintf(format, v...))
-	}
-	os.Exit(1)
 }

@@ -2,6 +2,7 @@
 
 That's it, just simple leveled logging with the Go std lib log.
 
+Usage:
 
 ```go
 package main
@@ -50,8 +51,8 @@ func main() {
 
 ```
 $ go run example/main.go
-INFO: main.go:19: default info
-ERRO: main.go:20: default error
+INFO: 2016/02/13 08:24:00 main.go:18: default info
+ERRO: 2016/02/13 08:24:00 main.go:19: default error
 ERRO: main.go:34: error yes
 DEBU: /Volumes/Data/dropbox/development/euler/src/github.com/pkar/log/example/main.go:39: debug yes
 INFO: /Volumes/Data/dropbox/development/euler/src/github.com/pkar/log/example/main.go:40: info yes

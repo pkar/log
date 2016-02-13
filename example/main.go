@@ -12,7 +12,6 @@ func main() {
 	if err != nil {
 		log.Error.Fatalln("Failed to open log file", err)
 	}
-	log.SetFlags(log.Lshortfile)
 
 	// default outputs
 	log.Debug.Println("default debug")
@@ -26,6 +25,7 @@ func main() {
 		log.Info.SetOutput(io.MultiWriter(os.Stdout, logFile))
 		log.Error.SetOutput(os.Stderr)
 	}
+	log.SetFlags(log.Lshortfile)
 	log.SetOutputs(newOuts)
 	// Set the level dynamically
 	log.SetLevel(log.ErrorLevel)

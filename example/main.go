@@ -18,6 +18,13 @@ func main() {
 	log.Info.Println("default info")
 	log.Error.Printf("%s", "default error")
 
+	// set prefix on debug
+	log.SetPrefix("sometext")
+	log.Info.Println("info prefix")
+	log.Error.Println("error prefix")
+	// reset it
+	log.SetPrefix("")
+
 	// Create a default output setter optionally. The initial one uses
 	// ioutil.Discard, os.Stdout, os.Stderr
 	var newOuts = func() {

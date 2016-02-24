@@ -54,19 +54,21 @@ func SetOutputs(fn func()) {
 
 // SetFlags initializes the flags for Debug, Info, Error
 func SetFlags(flags int) {
-	mu.Lock()
-	defer mu.Unlock()
-
 	Debug.SetFlags(flags)
 	Info.SetFlags(flags)
 	Error.SetFlags(flags)
 }
 
+// SetPrefix initializes the prefix for Debug, Info, Error
+// It will always put the level first
+func SetPrefix(prefix string) {
+	Debug.SetPrefix("DEBU " + prefix + ":")
+	Info.SetPrefix("INFO " + prefix + ":")
+	Error.SetPrefix("ERRO " + prefix + ":")
+}
+
 // SetLevel initializes writers below the level to io.Discard.
 func SetLevel(level int) {
-	mu.Lock()
-	defer mu.Unlock()
-
 	initOutputs()
 
 	switch level {
